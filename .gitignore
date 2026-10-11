@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+release/
+out/
+
+# Runtime data
+data/cache/
+logs/
+*.log
+*.log.*
+
+# User configs
+.mc-analyzer/
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temp
+*.tmp
+*.bak
+*.old
+.tmp/
+
+# Electron
+npm-debug.log*
+yarn-error.log*

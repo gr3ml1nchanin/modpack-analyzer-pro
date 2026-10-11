@@ -1,0 +1,105 @@
+{
+  "name": "modpack-analyzer-pro",
+  "productName": "Modpack Analyzer PRO",
+  "version": "0.1.0",
+  "description": "Minecraft modpack analyzer / conflict resolver / config editor",
+  "author": {
+    "name": "gr3ml1",
+    "url": "https://github.com/gr3ml1nchanin"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/gr3ml1nchanin/modpack-analyzer-pro",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gr3ml1nchanin/modpack-analyzer-pro.git"
+  },
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "cross-env MC_ANALYZER_DEBUG=1 electron .",
+    "build": "electron-builder --win --x64",
+    "build:portable": "electron-builder --win portable --x64",
+    "build:installer": "electron-builder --win nsis --x64",
+    "pack": "electron-builder --dir"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.10",
+    "json5": "^2.2.3",
+    "smol-toml": "^1.1.4",
+    "yaml": "^2.4.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.gr3ml1.modpack-analyzer-pro",
+    "productName": "Modpack Analyzer PRO",
+    "copyright": "© 2026 gr3ml1",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "core/**/*",
+      "src/**/*",
+      "!**/*.map",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/*.log",
+      "!.vscode/**/*",
+      "!docs/**/*",
+      "!.gitignore",
+      "!README.md"
+    ],
+    "extraResources": [
+      {
+        "from": "data",
+        "to": "data",
+        "filter": [
+          "**/*",
+          "!cache/**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "publisherName": "gr3ml1"
+    },
+    "portable": {
+      "artifactName": "ModpackAnalyzerPRO-${version}-portable.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Modpack Analyzer PRO",
+      "artifactName": "ModpackAnalyzerPRO-${version}-setup.exe",
+      "deleteAppDataOnUninstall": false
+    },
+    "compression": "maximum",
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/adm-zip/**/*"
+    ]
+  }
+}
