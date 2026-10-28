@@ -48,7 +48,27 @@ contextBridge.exposeInMainWorld('api', {
   on: {
     logEntry: (cb) => subscribe('log:entry', cb),
     progress: (cb) => subscribe('progress',  cb)
-  }
+  },
+     worldgen: { 
+    scan: (root) => ipcRenderer.invoke('worldgen:scan', root),
+    save: (root, changes) => ipcRenderer.invoke('worldgen:save', root, changes) 
+  },
+    report: {
+    txt: (data) => ipcRenderer.invoke('report:txt', data),
+    html: (data) => ipcRenderer.invoke('report:html', data),
+    prompt: (opts, data) => ipcRenderer.invoke('report:prompt', opts, data),
+    save: (content, defaultName) => ipcRenderer.invoke('report:save', content, defaultName)
+  },
+    live: {
+    start: (logPath) => ipcRenderer.invoke('live:start', logPath),
+    stop: () => ipcRenderer.invoke('live:stop'),
+    onEvent: (cb) => {
+      const h = (_e, d) => cb(d);
+      ipcRenderer.on('live:event', h);
+      return () => ipcRenderer.removeListener('live:event', h);
+    }
+  },
+   textures: { batch: (root, itemIds) => ipcRenderer.invoke('textures:batch', root, itemIds) },
 });
 
 function subscribe(channel, cb) {

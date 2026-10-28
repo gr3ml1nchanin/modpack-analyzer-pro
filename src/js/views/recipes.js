@@ -117,10 +117,19 @@ window.Views.recipes = (function () {
         ns.onchange = e => { nsFilter = e.target.value; render(); };
       }
 
-      document.querySelectorAll('#rec-list .list-item').forEach(el => {
-        el.onclick = () => {
+            document.querySelectorAll('#rec-list .list-item').forEach(el => {
+        el.onclick = async () => {
           const r = recipesCache.find(x => x.id === el.dataset.id);
-          if (r) { selected = r; render(); }
+          if (r) { 
+            selected = r; 
+            // Собираем ID всех ингредиентов
+            const ids = [r.result.item];
+            for (const ing of r.ingredients) {
+              if (ing.ing.type === 'item') ids.push(ing.ing.id);
+            }
+            await window.TextureHelper.load(state.scan.root, ids);
+            render(); 
+          }
         };
       });
 
@@ -291,7 +300,13 @@ window.Views.recipes = (function () {
     function renderIngredient(ing) {
       if (!ing) return '';
       if (ing.type === 'item') {
+              if (ing.type === 'item') {
+        const icon = window.TextureHelper.html(ing.id, 24);
         return '<div class="recipe-ing" title="' + esc(ing.id) + '">' +
+          icon +
+          '<div class="recipe-ing-name" style="font-size:9px;">' + esc(shortName(ing.id)) + '</div>' +
+        '</div>';
+      } +
           '<div class="recipe-ing-name">' + esc(shortName(ing.id)) + '</div>' +
           '<div class="recipe-ing-id">' + esc(ing.id) + '</div>' +
         '</div>';

@@ -10,6 +10,8 @@ window.Sidebar = (function () {
     { id: 'items',     key: 'nav.items',     icon: 'M6 2l-4 8 10 12 10-12-4-8zM2 10h20M12 2v8M12 12v10' },
     { id: 'aboutMods', key: 'nav.aboutMods', icon: 'M12 2a10 10 0 100 20 10 10 0 000-20zM12 8h.01M11 12h1v4h1' },
     { id: 'analysis',  key: 'nav.analysis',  icon: 'M3 3v18h18M7 15l4-4 4 4 6-6' },
+    { id: 'generation', key: 'nav.generation', icon: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' },
+    { id: 'reports', key: 'nav.reports', icon: 'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8' },
     { id: 'about',     key: 'nav.about',     icon: 'M12 2a10 10 0 100 20 10 10 0 000-20zM12 16v-4M12 8h.01' }
   ];
 

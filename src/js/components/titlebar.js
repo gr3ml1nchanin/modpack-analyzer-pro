@@ -2,12 +2,9 @@ window.TitleBar = (function () {
   function render() {
     const el = document.getElementById('titlebar');
     el.innerHTML = `
-      <div class="tb-logo">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z"/>
-          <path d="M3 7l9 5 9-5"/><path d="M12 22V12"/>
-        </svg>
-               ${window.I18n ? window.I18n.t('titlebar.brand') : 'Modpack Analyzer'} <span class="tb-badge">PRO</span>
+            <div class="tb-logo">
+        <img src="icon.png" alt="KatAn" style="width:18px;height:18px;image-rendering:crisp-edges;border-radius:4px"/>
+        ${window.I18n ? window.I18n.t('titlebar.brand') : 'KatAn'}
       </div>
       <div class="tb-spacer"></div>
       <div class="tb-controls">

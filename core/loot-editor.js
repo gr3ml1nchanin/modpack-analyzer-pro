@@ -66,11 +66,11 @@ async function saveLootOverride(root, tableOverride) {
   // README один раз
   try { await fsp.access(path.join(root, KUBEJS_RM)); }
   catch {
-    await fsp.writeFile(path.join(root, KUBEJS_RM), [
+      await fsp.writeFile(path.join(root, KUBEJS_RM), [
       '# analyzer_*.js',
       '',
       'Файлы `analyzer_recipes.js` и `analyzer_loot.js` сгенерированы приложением',
-      '**Modpack Analyzer PRO**. Не редактируйте их вручную — при следующем сохранении',
+      '**KatAn**. Не редактируйте их вручную — при следующем сохранении',
       'из приложения файлы будут полностью перезаписаны.',
       '',
       'Правки хранятся в `data/recipe-overrides.json` и `data/loot-overrides.json`.',

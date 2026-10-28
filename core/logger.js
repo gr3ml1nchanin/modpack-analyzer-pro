@@ -6,7 +6,7 @@ const LEVELS = { DEBUG: 10, INFO: 20, WARN: 30, ERROR: 40, FATAL: 50 };
 
 class Logger {
   constructor(opts = {}) {
-    this.dir = opts.dir || path.join(os.homedir(), '.mc-analyzer', 'logs');
+    this.dir = opts.dir || path.join(os.homedir(), '.katan', 'logs');
     this.debugEnabled = opts.debug !== false;
     fs.mkdirSync(this.dir, { recursive: true });
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');

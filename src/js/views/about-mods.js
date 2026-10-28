@@ -48,7 +48,7 @@ window.Views.aboutMods = (function () {
       };
     }
 
-    function modCard(m) {
+        function modCard(m) {
       const initial = (m.name || m.id || '?').charAt(0).toUpperCase();
       const stats = [];
       if (m.items.length)        stats.push([t('aboutMods.stat.items'),      m.items.length,          '#60a5fa']);
@@ -60,10 +60,23 @@ window.Views.aboutMods = (function () {
       if (m.langKeys)            stats.push([t('aboutMods.stat.lang'),       m.langKeys,              '#06b6d4']);
       if (m.counts.recipes)      stats.push([t('aboutMods.stat.recipes'),    m.counts.recipes,        '#fb923c']);
 
+      // Ищем информацию о файле мода (там хранится iconPath)
       const mod = state.scan ? state.scan.mods.find(x => x.file === m.file) : null;
+      
+      // Формируем аватарку (иконку или букву)
+      let avatarHtml = '';
+      if (mod && mod.iconPath) {
+        // Если есть путь к иконке, используем наш кастомный протокол
+        const iconUrl = 'katan-icon://' + encodeURIComponent(mod.iconPath).replace(/%5C/g, '/');
+        avatarHtml = `<img src="${iconUrl}" class="mod-avatar" style="object-fit:contain; padding: 4px; background:var(--bg-hover);" alt="icon"/>`;
+      } else {
+        // Иначе показываем букву
+        avatarHtml = `<div class="mod-avatar">${esc(initial)}</div>`;
+      }
+
       return '<div class="mod-card">' +
         '<div class="mod-head">' +
-          '<div class="mod-avatar">' + esc(initial) + '</div>' +
+          avatarHtml +
           '<div style="flex:1;min-width:0">' +
             '<div class="mod-name">' + esc(m.name || m.id || m.file) + '</div>' +
             '<div class="mod-id">' + esc(m.id || '?') + ' · ' + esc(m.ver || '?') + '</div>' +

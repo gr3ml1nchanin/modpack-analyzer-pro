@@ -7,6 +7,8 @@ window.I18n = (function () {
       'nav.recipes':    'Рецепты',
       'nav.loot':       'Лут',
       'nav.graph':      'Граф',
+      'nav.generation': 'Генерация',
+      'nav.reports': 'Отчёты',
       'nav.configs':    'Конфиги',
       'nav.logs':       'Логи',
       'nav.items':      'Предметы',
@@ -16,7 +18,7 @@ window.I18n = (function () {
       'nav.language':   'Язык',
 
       /* === Titlebar === */
-      'titlebar.brand': 'Modpack Analyzer',
+      'titlebar.brand': 'KatAn',
 
       /* === Statusbar === */
       'status.ready':   'Готово',
@@ -493,6 +495,8 @@ window.I18n = (function () {
       'nav.recipes':    'Recipes',
       'nav.loot':       'Loot',
       'nav.graph':      'Graph',
+      'nav.generation': 'Generation',
+      'nav.reports': 'Reports',
       'nav.configs':    'Configs',
       'nav.logs':       'Logs',
       'nav.items':      'Items',
@@ -502,7 +506,7 @@ window.I18n = (function () {
       'nav.language':   'Language',
 
       /* === Titlebar === */
-      'titlebar.brand': 'Modpack Analyzer',
+      'titlebar.brand': 'KatAn',
 
       /* === Statusbar === */
       'status.ready':   'Ready',

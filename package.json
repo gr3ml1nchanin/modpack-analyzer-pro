@@ -1,10 +1,10 @@
 {
-  "name": "modpack-analyzer-pro",
-  "productName": "Modpack Analyzer PRO",
-  "version": "0.1.0",
-  "description": "Minecraft modpack analyzer / conflict resolver / config editor",
+  "name": "katan",
+  "productName": "KatAn",
+  "version": "2.0.0",
+  "description": "KatAn — Minecraft modpack analyzer, conflict resolver and config editor",
   "author": {
-    "name": "gr3ml1",
+    "name": "NNV2319, GR3ML1",
     "url": "https://github.com/gr3ml1nchanin"
   },
   "license": "MIT",
@@ -34,9 +34,9 @@
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "appId": "com.gr3ml1.modpack-analyzer-pro",
-    "productName": "Modpack Analyzer PRO",
-    "copyright": "© 2026 gr3ml1",
+    "appId": "com.katan.app",
+    "productName": "KatAn",
+    "copyright": "© 2026 NNV2319, GR3ML1",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -81,10 +81,10 @@
         }
       ],
       "icon": "build/icon.ico",
-      "publisherName": "gr3ml1"
+      "publisherName": "KatAn Team"
     },
     "portable": {
-      "artifactName": "ModpackAnalyzerPRO-${version}-portable.exe"
+      "artifactName": "KatAn-${version}-portable.exe"
     },
     "nsis": {
       "oneClick": false,
@@ -92,8 +92,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Modpack Analyzer PRO",
-      "artifactName": "ModpackAnalyzerPRO-${version}-setup.exe",
+      "shortcutName": "KatAn",
+      "artifactName": "KatAn-${version}-setup.exe",
       "deleteAppDataOnUninstall": false
     },
     "compression": "maximum",

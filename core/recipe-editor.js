@@ -67,14 +67,14 @@ async function saveRecipe(root, recipe) {
   const readmePath = path.join(root, KUBEJS_README);
   try { await fsp.access(readmePath); }
   catch {
-    await fsp.writeFile(readmePath, [
+      await fsp.writeFile(readmePath, [
       '# analyzer_recipes.js',
       '',
-      'Этот файл сгенерирован приложением **Modpack Analyzer PRO**.',
+      'Этот файл сгенерирован приложением **KatAn**.',
       'Не редактируйте его вручную — при следующем сохранении из приложения',
       'файл будет полностью перезаписан.',
       '',
-      'Если хотите откатить правки — откройте Modpack Analyzer, раздел «Рецепты»,',
+      'Если хотите откатить правки — откройте KatAn, раздел «Рецепты»,',
       'и удалите ненужные изменения. Или откатите вручную по data/recipe-overrides.json.',
       ''
     ].join('\n'), 'utf8');

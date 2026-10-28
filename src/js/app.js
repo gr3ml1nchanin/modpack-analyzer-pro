@@ -44,6 +44,22 @@ window.App = (function () {
             m._type = 'unknown';
           }
         }
+                // Фолбэк описаний из Modrinth, если в JAR было пусто
+        if (window.State.data.modInfo && window.State.data.modInfo.list) {
+          for (const mi of window.State.data.modInfo.list) {
+            const c = byFile.get(mi.file);
+            if (c && c.project && c.project.description && (!mi.description || mi.description.length < 5)) {
+               mi.description = c.project.description.replace(/\s+/g, ' ').trim().slice(0, 400);
+            }
+          }
+          window.State.set({ modInfo: window.State.data.modInfo });
+        }
+        for (const m of scan.mods) {
+          const c = byFile.get(m.file);
+          if (c && c.project && c.project.description && (!m.description || m.description.length < 5)) {
+             m.description = c.project.description.replace(/\s+/g, ' ').trim().slice(0, 400);
+          }
+        }
         window.State.set({ classify: list, scan: scan });
         window.Sidebar.setLoader('Готово');
         setTimeout(() => window.Sidebar.setLoader(null), 1200);
@@ -72,25 +88,44 @@ window.App = (function () {
   }
 
   function init() {
+    // Инициализация интерфейса
     window.TitleBar.render();
     window.Sidebar.render();
     window.StatusBar.render();
+    window.Tabs.render();
 
+    // Слушаем логи для консоли разработчика
     window.API.on.logEntry(e => {
       if (e.level === 'ERROR' || e.level === 'FATAL') console.error('[APP]', e.scope, e.msg);
     });
-        window.API.on.progress(p => {
+
+    // Слушаем прогресс-бар (загрузка модов, рецептов, лута и т.д.)
+    window.API.on.progress(p => {
       const cur = Math.min(p.i + 1, p.total);
       if (p.module === 'classify')      window.Sidebar.setLoader('Классификация ' + cur + '/' + p.total);
       else if (p.module === 'modinfo')  window.Sidebar.setLoader('ModInfo ' + cur + '/' + p.total);
       else if (p.module === 'recipes')  window.Sidebar.setLoader('Рецепты ' + cur + '/' + p.total);
+      else if (p.module === 'loot')     window.Sidebar.setLoader('Лут ' + cur + '/' + p.total);
       else if (p.module === 'loot-vanilla') window.Sidebar.setLoader('Ванильный jar ' + cur + '/' + p.total);
+      else if (p.module === 'vanilla-dl') window.Sidebar.setLoader('Скачивание jar ' + cur + '/' + p.total);
+      else if (p.module === 'worldgen') window.Sidebar.setLoader('Генерация ' + cur + '/' + p.total);
+    });
+
+    // Открываем первую вкладку при запуске
+    window.Router.go('overview');
+
+        window.API.live.onEvent((event) => {
+      if (event.level === 'ERROR') {
+        window.Toast.error('Ошибка в Minecraft', event.text.slice(0, 150) + '...');
+      } else if (event.level === 'WARN') {
+        window.Toast.warn('Предупреждение', event.text.slice(0, 150) + '...');
+      }
     });
     
-
-    window.Router.go('overview');
   }
 
+  // Запускаем всё после полной загрузки DOM
   window.addEventListener('DOMContentLoaded', init);
+
   return { openModpack, rescan };
 })();

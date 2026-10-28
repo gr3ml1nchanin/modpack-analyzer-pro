@@ -34,7 +34,7 @@ async function classifyMod(jarPath, modrinth) {
       const v = await modrinth.projectByHash(result.sha1);
       if (v && v.project_id) {
         const p = await modrinth.project(v.project_id);
-        result.project = { id: p.id, slug: p.slug, title: p.title, downloads: p.downloads,
+        result.project = { id: p.id, slug: p.slug, title: p.title, downloads: p.downloads, description: p.description,
           categories: p.categories, loaders: p.loaders, client_side: p.client_side, server_side: p.server_side };
         result.categories = p.categories || [];
         if (p.client_side === 'required' && p.server_side === 'unsupported') result.type = 'client';

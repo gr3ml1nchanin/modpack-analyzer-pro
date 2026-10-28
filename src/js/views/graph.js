@@ -475,12 +475,30 @@ window.Views.graph = (function () {
         }
       }
 
-      function loop() {
+           let wasHidden = false;
+      function loop(now) {
         if (cleaned) return;
         if (!canvas.isConnected) { cleanup(); return; }
 
-        if (needsRedraw) { draw(); needsRedraw = false; }
-        if (pulses.length) needsRedraw = true;
+        // Пауза, если вкладка скрыта (display:none)
+        const visible = canvas.offsetParent !== null;
+
+                if (visible && wasHidden) {
+          wasHidden = false;
+          try { resize(); fitView(false); } catch (e) {}
+          needsRedraw = true;
+        } else if (!visible && !wasHidden) {
+          wasHidden = true;
+        }
+
+        if (visible) {
+          // Страховка: если canvas 0×0 (не успел посчитаться layout) — пересчитываем
+          if (W === 0 || H === 0 || canvas.width === 0 || canvas.height === 0) {
+            try { resize(); fitView(false); } catch (e) {}
+          }
+          if (needsRedraw) { draw(); needsRedraw = false; }
+          if (pulses.length) needsRedraw = true;
+        }
 
         animFrame = requestAnimationFrame(loop);
       }

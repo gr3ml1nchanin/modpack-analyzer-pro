@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const log = require('./logger');
 const API = 'https://api.modrinth.com/v2';
 const CACHE_TTL = 1000 * 60 * 60 * 24;
-const UA = 'modpack-analyzer-pro/1.0';
+const UA = 'katan/1.0';
 
 class Modrinth {
   constructor(cacheDir) { this.cacheDir = cacheDir; this.memCache = new Map(); }

@@ -1,9 +1,13 @@
 'use strict';
+const worldgenScanner = require('./worldgen-scanner');
 const lootEditor = require('./loot-editor');
 const lootScanner = require('./loot-scanner');
 const path = require('path');
 const fsp = require('fs').promises;
+const textureExtractor = require('./texture-extractor');
 const electron = require('electron');
+const reportGen = require('./report-generator');
+const liveTracker = require('./live-tracker');
 const ipcMain = electron.ipcMain;
 const dialog = electron.dialog;
 const Logger = require('./logger');
@@ -25,6 +29,59 @@ const configEditor = require('./config-editor');
 
 module.exports = function registerIpc(getMainWindow) {
   const modrinth = new Modrinth(path.join(__dirname, '..', 'data', 'cache', 'modrinth'));
+
+    ipcMain.handle('textures:batch', async (_e, root, itemIds) => {
+    const modsDir = path.join(root, 'mods');
+    const cacheDir = path.join(__dirname, '..', 'data', 'cache', 'textures');
+    // Передаем root, чтобы экстрактор нашел minecraft.jar
+    return textureExtractor.extractBatch(root, modsDir, cacheDir, itemIds);
+  });
+
+  ipcMain.handle('worldgen:scan', async (_e, root) => {
+  const modsDir = path.join(root, 'mods');
+  return Logger.timed('worldgen', 'scan', () =>
+    worldgenScanner.scanWorldgen(modsDir, (i, total, file) => {
+      const w = getMainWindow();
+      if (w && !w.isDestroyed()) w.webContents.send('progress', { module: 'worldgen', i, total, file });
+    })
+  );
+});
+  ipcMain.handle('live:start', (_e, logPath) => {
+    return liveTracker.startTracking(logPath, (event) => {
+      const w = getMainWindow();
+      if (w && !w.isDestroyed()) {
+        w.webContents.send('live:event', event);
+      }
+    });
+  });
+
+  ipcMain.handle('live:stop', () => {
+    liveTracker.stopTracking();
+    return { ok: true };
+  });
+  
+  ipcMain.handle('report:txt', (_e, data) => reportGen.generateTxt(data));
+  ipcMain.handle('report:html', (_e, data) => reportGen.generateHtml(data));
+  ipcMain.handle('report:prompt', (_e, opts, data) => reportGen.generatePrompt(opts, data));
+  ipcMain.handle('report:save', async (_e, content, defaultName) => {
+    const { dialog } = require('electron');
+    const r = await dialog.showSaveDialog(getMainWindow(), {
+      title: 'Сохранить отчёт',
+      defaultPath: defaultName,
+      filters: [
+        { name: 'Text', extensions: ['txt'] },
+        { name: 'HTML', extensions: ['html'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+    if (r.canceled) return { ok: false };
+    try {
+      await require('fs').promises.writeFile(r.filePath, content, 'utf8');
+      return { ok: true, path: r.filePath };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  });
 
   ipcMain.handle('mp:scan', (_e, root) => scanModpack(root));
 

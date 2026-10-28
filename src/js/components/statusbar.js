@@ -1,6 +1,8 @@
 window.StatusBar = (function () {
-  function render() {
-        const t = window.I18n ? window.I18n.t : (k) => k;
+    function render() {
+    const t = window.I18n ? window.I18n.t : (k) => k;
+    const el = document.getElementById('statusbar');
+    if (!el) return;
     el.innerHTML = `
       <div class="status-item"><span class="dot"></span><span id="sb-status">${t('status.ready')}</span></div>
       <div class="status-spacer"></div>

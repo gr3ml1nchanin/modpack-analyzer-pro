@@ -1,4 +1,5 @@
 'use strict';
+const { extractModIcon } = require('./image-extractor');
 const fsp = require('fs').promises;
 const path = require('path');
 const fs = require('fs');
@@ -55,7 +56,23 @@ function readModMeta(jarPath) {
     try {
       const d = JSON.parse(zip.readAsText('fabric.mod.json'));
       meta.loader = 'Fabric'; meta.id = d.id || null; meta.name = d.name || d.id || null;
-      meta.version = d.version || null; meta.description = (d.description || '').toString();
+      meta.version = d.version || null;       // Извлекаем описание (может быть строкой или объектом)
+      if (typeof d.description === 'string') {
+        meta.description = d.description;
+      } else if (d.description && typeof d.description === 'object') {
+        meta.description = d.description.en_us || Object.values(d.description)[0] || '';
+      }
+
+      // Если описания нет, ищем его в файле локализации
+      if (!meta.description && meta.id) {
+        const langEntry = zip.getEntry('assets/' + meta.id + '/lang/en_us.json');
+        if (langEntry) {
+          try {
+            const lang = JSON.parse(langEntry.getData().toString('utf8'));
+            meta.description = lang['modmenu.descriptionTranslation.' + meta.id] || lang['itemGroup.' + meta.id] || '';
+          } catch {}
+        }
+      }
       meta.license = d.license || null;
       meta.homepage = d.contact && d.contact.homepage ? d.contact.homepage : null;
       if (Array.isArray(d.authors)) meta.authors = d.authors.map(a => typeof a === 'string' ? a : a.name).filter(Boolean);
@@ -85,7 +102,16 @@ function readModMeta(jarPath) {
       const parsed = parseTomlLite(zip.readAsText('META-INF/mods.toml'));
       const mod = parsed.mods[0] || {};
       meta.loader = 'Forge'; meta.id = mod.modId || null; meta.name = mod.displayName || mod.modId || null;
-      meta.version = mod.version || null; meta.description = (mod.description || '').toString();
+      meta.version = mod.version || null;       meta.description = (mod.description || '').toString();
+      if (!meta.description && meta.id) {
+        const langEntry = zip.getEntry('assets/' + meta.id + '/lang/en_us.json');
+        if (langEntry) {
+          try {
+            const lang = JSON.parse(langEntry.getData().toString('utf8'));
+            meta.description = lang['modmenu.descriptionTranslation.' + meta.id] || lang['itemGroup.' + meta.id] || '';
+          } catch {}
+        }
+      }
       meta.license = parsed.license || mod.license || null;
       if (mod.authors) meta.authors = String(mod.authors).split(',').map(s => s.trim());
       if (parsed.dependencies[meta.id]) meta.dependencies = parsed.dependencies[meta.id]
@@ -183,16 +209,36 @@ async function scanModpack(root) {
         if (m.name) result.name = m.name;
       } catch {}
     }
-    if (result.folders.mods) {
+        if (result.folders.mods) {
       const modsDir = path.join(root, 'mods');
       const files = (await listDir(modsDir)).filter(e => e.isFile() && /\.jar$/i.test(e.name));
+      const cacheDir = path.join(__dirname, '..', 'data', 'cache', 'icons');
+      
       for (const f of files) {
         const fp = path.join(modsDir, f.name);
         const st = await safeStat(fp);
         const meta = readModMeta(fp);
-        const rec = { file: f.name, path: fp, size: st ? st.size : 0 };
-        for (const kk in meta) rec[kk] = meta[kk];
-        result.mods.push(rec);
+        
+        let iconPath = null;
+        if (meta.id) {
+          // Пытаемся достать иконку (работает асинхронно, не блокирует)
+          extractModIcon(fp, meta.id, cacheDir).then(savedPath => {
+            if (savedPath) {
+              // Обновляем мод в State (опционально, но можно просто передать путь)
+            }
+          });
+          // Для простоты сохраняем предполагаемый путь, если файл есть
+          const expected = path.join(cacheDir, meta.id.replace(/[^a-z0-9_\-]/gi, '_') + '.png');
+          if (fs.existsSync(expected)) iconPath = expected;
+        }
+
+        result.mods.push({ 
+          file: f.name, 
+          path: fp, 
+          size: st ? st.size : 0, 
+          iconPath: iconPath, // <--- Добавили поле
+          ...meta 
+        });
       }
     }
     if (result.folders.config) result.configs = await walkConfigs(path.join(root, 'config'));

@@ -12,13 +12,23 @@ const Logger = require('./core/logger');
 let mainWindow = null;
 
 function createWindow() {
-  mainWindow = new BrowserWindow({
+    mainWindow = new BrowserWindow({
     width: 1480, height: 920, minWidth: 1100, minHeight: 700,
-    show: false, frame: false, backgroundColor: '#0a0e14',
+    show: false, 
+    frame: false, 
+    backgroundColor: '#0a0e16',    // Наш старый тёмно-синий
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true, nodeIntegration: false, sandbox: false
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false
     }
+  });
+    // Разрешаем загрузку локальных картинок для иконок модов
+  mainWindow.webContents.session.protocol.registerFileProtocol('katan-icon', (request, callback) => {
+    const url = request.url.substr('katan-icon://'.length);
+    const decodedUrl = decodeURIComponent(url);
+    callback({ path: path.normalize(decodedUrl) });
   });
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
   mainWindow.once('ready-to-show', () => mainWindow.show());

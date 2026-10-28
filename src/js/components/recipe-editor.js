@@ -10,7 +10,7 @@ window.RecipeEditor = (function () {
   let modalEl = null;
   let currentState = null;
 
-    function open(opts) {
+  async function open(opts) {
     // opts: { recipe?, suggestions: { items, tags }, onSave(recipe), onDelete(id) }
     const isNew = !opts.recipe;
     const base = opts.recipe || {
@@ -33,6 +33,30 @@ window.RecipeEditor = (function () {
       pickerQuery: ''
     };
 
+    // === ПОДГРУЗКА ТЕКСТУР ПЕРЕД ОТКРЫТИЕМ ===
+    if (window.TextureHelper && window.State.data.scan) {
+      const ids = new Set();
+      if (base.result && base.result.item) ids.add(base.result.item);
+      
+      // Собираем ID из разных форматов ингредиентов
+      if (base.ingredients) {
+        for (const ing of base.ingredients) {
+          if (typeof ing === 'string') ids.add(ing);
+          else if (ing.id) ids.add(ing.id);
+          else if (ing.ing && ing.ing.id) ids.add(ing.ing.id);
+        }
+      }
+      if (base.key) {
+        for (const val of Object.values(base.key)) {
+          if (typeof val === 'string') ids.add(val);
+          else if (val && val.id) ids.add(val.id);
+        }
+      }
+      
+      await window.TextureHelper.load(window.State.data.scan.root, Array.from(ids));
+    }
+    // ==========================================
+
     renderModal();
   }
 
@@ -44,7 +68,7 @@ window.RecipeEditor = (function () {
 
   function deepClone(x) { return JSON.parse(JSON.stringify(x)); }
 
-    function ingredientToId(x) {
+  function ingredientToId(x) {
     if (!x) return '';
     if (typeof x === 'string') return x;
     if (Array.isArray(x)) {
@@ -52,12 +76,9 @@ window.RecipeEditor = (function () {
       return '';
     }
     if (typeof x === 'object') {
-      // Наш формат из парсера: { type: 'item'|'tag', id }
       if (x.type === 'tag')  return '#' + (x.id || x.tag || '');
       if (x.type === 'item') return x.id || x.item || '';
-      // Обёртка shapeless-элемента: { idx, ing: {...} }
       if (x.ing) return ingredientToId(x.ing);
-      // Vanilla-формат
       if (x.tag)  return '#' + x.tag;
       if (x.item) return x.item;
       if (x.id)   return x.id;
@@ -71,7 +92,6 @@ window.RecipeEditor = (function () {
     const type = recipe.type || 'crafting_shaped';
 
     if (type === 'crafting_shaped') {
-      // 1) Новый формат: ingredients с { row, col, ing }
       if (Array.isArray(recipe.ingredients) && recipe.ingredients.length) {
         for (const item of recipe.ingredients) {
           if (typeof item.row !== 'number' || typeof item.col !== 'number') continue;
@@ -80,7 +100,6 @@ window.RecipeEditor = (function () {
           if (id) grid[item.row][item.col] = { id };
         }
       }
-      // 2) Legacy: shape + key
       else if (recipe.shape && recipe.key) {
         for (let r = 0; r < Math.min(3, recipe.shape.length); r++) {
           const row = recipe.shape[r] || '';
@@ -119,7 +138,6 @@ window.RecipeEditor = (function () {
     r.result = r.result || { item: '', count: 1 };
     r.type = r.type || 'crafting_shaped';
 
-    // чистим
     r.shape = null; r.key = null; r.ingredients = null;
 
     if (r.type === 'crafting_shaped') {
@@ -128,13 +146,12 @@ window.RecipeEditor = (function () {
       const letters = 'ABCDEFGHI';
       let letterIdx = 0;
       const grid = st.grid;
-      // Обрезаем до минимальной рамки? Оставим 3×3 всегда
+      
       for (let row = 0; row < 3; row++) {
         let line = '';
         for (let col = 0; col < 3; col++) {
           const cell = grid[row][col];
           if (!cell || !cell.id) { line += ' '; continue; }
-          // ищем уже назначенную букву для этого id
           let ch = null;
           for (const k of Object.keys(key)) {
             if (key[k] === cell.id) { ch = k; break; }
@@ -166,7 +183,7 @@ window.RecipeEditor = (function () {
 
   /* ================== Рендер ================== */
 
-    function renderModal() {
+  function renderModal() {
     if (!modalEl) {
       modalEl = document.createElement('div');
       modalEl.className = 're-overlay';
@@ -257,30 +274,37 @@ window.RecipeEditor = (function () {
       }
       return '<div class="re-grid">' + cells.join('') + '</div>';
     }
-
-    // Только один слот
     return '<div class="re-grid-single">' + renderSlot(0, 0) + '</div>';
   }
 
-    function renderSlot(r, c) {
+  function renderSlot(r, c) {
     const st = currentState;
     const cell = st.grid[r] && st.grid[r][c];
     const isSelected = st.pickerTarget && st.pickerTarget.kind === 'slot' &&
       st.pickerTarget.row === r && st.pickerTarget.col === c;
-      const hasId = cell && cell.id && typeof cell.id === 'string';
+    const hasId = cell && cell.id && typeof cell.id === 'string';
     const isTag = hasId && cell.id.charAt(0) === '#';
+    
+    // Иконка
+    let iconHtml = '';
+    if (hasId && !isTag && window.TextureHelper) {
+      iconHtml = window.TextureHelper.html(cell.id, 24);
+    }
+    
     return '<div class="re-slot' + (hasId ? ' filled' : '') + (isTag ? ' tag' : '') + (isSelected ? ' selected' : '') +
       '" data-row="' + r + '" data-col="' + c + '">' +
       (hasId
-                ? '<div class="re-slot-name">' + esc(shortName(String(cell.id))) + '</div>' +
-          '<div class="re-slot-id">' + esc(String(cell.id)) + '</div>' +
+        ? iconHtml +
+          '<div class="re-slot-name" style="font-size:9px;">' + esc(shortName(String(cell.id))) + '</div>' +
           '<button class="re-slot-clear" data-clear="' + r + '_' + c + '" title="Очистить">×</button>'
         : '<div class="re-slot-empty">+</div>') +
     '</div>';
   }
 
   function renderResultPreview(result) {
+    const icon = (window.TextureHelper && result.item) ? window.TextureHelper.html(result.item, 32) : '';
     return '<div class="re-preview">' +
+      icon +
       '<div class="re-preview-name">' + esc(shortName(result.item)) + '</div>' +
       '<div class="re-preview-id">' + esc(result.item) + (result.count > 1 ? ' ×' + result.count : '') + '</div>' +
     '</div>';
@@ -288,7 +312,7 @@ window.RecipeEditor = (function () {
 
   /* ================== Events ================== */
 
-    function bindModalEvents() {
+  function bindModalEvents() {
     modalEl.querySelector('.re-close').onclick = close;
     modalEl.querySelector('#re-cancel').onclick = close;
 
@@ -309,7 +333,6 @@ window.RecipeEditor = (function () {
       renderModal();
     };
 
-    // клик по слоту → выбрать его как цель и открыть пикер
     modalEl.querySelectorAll('.re-slot').forEach(el => {
       el.onclick = e => {
         if (e.target.dataset.clear) return;
@@ -324,7 +347,6 @@ window.RecipeEditor = (function () {
       };
     });
 
-    // крестик — очистить слот
     modalEl.querySelectorAll('.re-slot-clear').forEach(b => {
       b.onclick = e => {
         e.stopPropagation();
@@ -338,7 +360,6 @@ window.RecipeEditor = (function () {
       };
     });
 
-    // поле результата — можно печатать, но кнопка «Выбрать» откроет пикер
     const ri = modalEl.querySelector('#re-result-item');
     if (ri) ri.oninput = e => { currentState.recipe.result.item = e.target.value.trim(); };
 
@@ -355,7 +376,6 @@ window.RecipeEditor = (function () {
     const rc = modalEl.querySelector('#re-result-count');
     if (rc) rc.oninput = e => { currentState.recipe.result.count = Math.max(1, parseInt(e.target.value, 10) || 1); };
 
-    // если открыт пикер — рендерим
     renderPicker();
 
     modalEl.querySelector('#re-save').onclick = async () => {
@@ -381,9 +401,7 @@ window.RecipeEditor = (function () {
     return null;
   }
 
-  /* ================== Picker (список предметов) ================== */
-
-    /* ================== Picker ================== */
+  /* ================== Picker ================== */
 
   function renderPicker() {
     const st = currentState;
@@ -447,7 +465,6 @@ window.RecipeEditor = (function () {
 
     search.oninput = e => {
       st.pickerQuery = e.target.value;
-      // обновляем только список
       const qq = st.pickerQuery.toLowerCase().trim();
       let l = [];
       if (st.pickerFilter === 'items') l = allItems.map(x => ({ kind: 'item', id: x }));
@@ -507,7 +524,6 @@ window.RecipeEditor = (function () {
     }
     bindRowClicks();
 
-    // авто-фокус и каретка в конец
     setTimeout(() => {
       if (search) { search.focus(); search.setSelectionRange(search.value.length, search.value.length); }
     }, 20);
@@ -516,8 +532,15 @@ window.RecipeEditor = (function () {
   function itemRow(id, kind) {
     const isTag = kind === 'tag' || (id && id.charAt(0) === '#');
     const pureId = isTag && id.charAt(0) === '#' ? id.slice(1) : id;
+    
+    // Иконка для пикера
+    const icon = (!isTag && window.TextureHelper) ? window.TextureHelper.html(pureId, 20) : '';
+
     return '<div class="re-picker-item' + (isTag ? ' tag' : '') + '" data-id="' + esc(isTag ? '#' + pureId : pureId) + '">' +
-      '<span class="re-picker-badge">' + (isTag ? 'TAG' : 'ITEM') + '</span>' +
+      '<div style="grid-row: 1 / 3; align-self: center; display: flex; align-items: center; gap: 6px;">' +
+        icon +
+        '<span class="re-picker-badge">' + (isTag ? 'TAG' : 'ITEM') + '</span>' +
+      '</div>' +
       '<span class="re-picker-name">' + (isTag ? '#' : '') + esc(shortName(pureId)) + '</span>' +
       '<span class="re-picker-id">' + esc(pureId) + '</span>' +
     '</div>';
@@ -528,7 +551,6 @@ window.RecipeEditor = (function () {
     if (!st.pickerTarget) return;
 
     if (st.pickerTarget.kind === 'result') {
-      // Убираем префикс # — результат не может быть тегом
       const clean = id.charAt(0) === '#' ? id.slice(1) : id;
       st.recipe.result.item = clean;
       st.pickerTarget = null;
@@ -539,7 +561,6 @@ window.RecipeEditor = (function () {
     if (st.pickerTarget.kind === 'slot') {
       const { row, col } = st.pickerTarget;
       st.grid[row][col] = { id };
-      // авто-переход к следующему пустому слоту (только для shaped/shapeless)
       const type = st.recipe.type;
       if (type === 'crafting_shaped' || type === 'crafting_shapeless') {
         let next = null;

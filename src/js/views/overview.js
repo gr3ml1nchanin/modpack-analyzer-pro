@@ -87,12 +87,12 @@ window.Views.overview = (function () {
       const s = state.scan.summary;
       const mods = state.scan.mods;
       return '<div class="stat-grid">' +
-        statCard(t('overview.stat.mods'), s.mods, human(s.totalModSize), 'mod', 'rgba(79,143,247,.15)', '#4f8ff7') +
-        statCard(t('overview.stat.configs'), s.configs, t('overview.stat.filesSub'), 'cfg', 'rgba(34,197,94,.15)', '#22c55e') +
-        statCard(t('overview.stat.logs'), s.logs, t('overview.stat.filesSub'), 'log', 'rgba(245,158,11,.15)', '#f59e0b') +
-        statCard(t('overview.stat.crashes'), s.crashes, t('overview.stat.reportsSub'), 'crash', 'rgba(239,68,68,.15)', '#ef4444') +
-        statCard(t('overview.stat.resourcepacks'), s.resourcepacks, t('overview.stat.packsSub'), 'pack', 'rgba(168,85,247,.15)', '#a855f7') +
-        statCard(t('overview.stat.shaderpacks'), s.shaderpacks, t('overview.stat.packsSub'), 'shader', 'rgba(236,72,153,.15)', '#ec4899') +
+        statCard(t('overview.stat.mods'), s.mods, human(s.totalModSize), 'mod', 'rgba(88,166,255,.15)', '#58a6ff') +
+statCard(t('overview.stat.configs'), s.configs, t('overview.stat.filesSub'), 'cfg', 'rgba(124,179,66,.15)', '#7cb342') +
+statCard(t('overview.stat.logs'), s.logs, t('overview.stat.filesSub'), 'log', 'rgba(240,184,88,.15)', '#f0b858') +
+statCard(t('overview.stat.crashes'), s.crashes, t('overview.stat.reportsSub'), 'crash', 'rgba(229,72,77,.15)', '#e5484d') +
+statCard(t('overview.stat.resourcepacks'), s.resourcepacks, t('overview.stat.packsSub'), 'pack', 'rgba(163,113,247,.15)', '#a371f7') +
+statCard(t('overview.stat.shaderpacks'), s.shaderpacks, t('overview.stat.packsSub'), 'shader', 'rgba(236,72,153,.15)', '#ec4899') +
       '</div>' +
       '<div class="card" style="margin-bottom:14px;display:flex;align-items:center;gap:12px;padding:12px 16px">' +
         '<div class="mono" style="color:var(--text-dimmer)">' + esc(state.scan.root) + '</div>' +
@@ -127,7 +127,13 @@ window.Views.overview = (function () {
         else if (l.indexOf('quilt') >= 0) counts.quilt++;
         else counts.unknown++;
       }
-      const colors = { forge: '#8b8dfb', fabric: '#c084fc', quilt: '#f472b6', neoforge: '#fbbf24', unknown: '#5a6478' };
+            const colors = { 
+        forge: '#0078D4',    // Синий
+        fabric: '#00B7C3',   // Бирюзовый
+        quilt: '#E3008C',    // Розовый
+        neoforge: '#FF8C00', // Оранжевый
+        unknown: '#808080'   // Серый
+      };
       const labels = { forge: 'Forge', fabric: 'Fabric', quilt: 'Quilt', neoforge: 'NeoForge', unknown: 'Other' };
       const total = mods.length || 1;
       const R = 46, C = 2 * Math.PI * R;

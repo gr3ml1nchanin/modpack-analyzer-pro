@@ -1,8 +1,10 @@
 window.State = (function () {
-  const data = {
+    const data = {
     root: null, scan: null, modInfo: null, junk: null, analysis: null,
     classify: null, logAnalysis: null, loadedLog: null, loadedCfg: null,
-    loading: false, currentView: 'overview'
+    loading: false, currentView: 'overview',
+    tabs: [],            // список открытых вкладок
+    activeTabId: null    // ID активной
   };
   const subs = [];
   return {

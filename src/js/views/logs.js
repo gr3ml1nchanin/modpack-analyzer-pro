@@ -13,6 +13,7 @@ window.Views.logs = (function () {
     let state = window.State.data;
     let filterLevel = 'ALL';
     let selected = null;
+    let isLiveTracking = false;
 
     function render() {
       const logs = state.scan ? state.scan.logs : [];
@@ -26,6 +27,10 @@ window.Views.logs = (function () {
               <div class="view-sub">${t('logs.sub', {logs: logs.length, crashes: crashes.length})}</div>
             </div>
             <div class="view-actions">
+              <button class="btn ${isLiveTracking ? 'primary' : ''}" id="log-live">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                ${isLiveTracking ? 'Остановить трекер' : 'Live-трекер'}
+              </button>
               <div class="filter-chips" id="log-chips">
                 ${['ALL','FATAL','ERROR','WARN','INFO','DEBUG','TRACE'].map(l =>
                   '<div class="chip ' + (filterLevel===l?'active':'') + '" data-l="' + l + '">' + t('logs.chip.' + l.toLowerCase()) + '</div>'
@@ -61,9 +66,21 @@ window.Views.logs = (function () {
           </div>
         </div>`;
 
+      if (selected) {
+        document.querySelectorAll('.list-item[data-kind]').forEach(x => {
+          if (x.dataset.path === selected.path) x.classList.add('active');
+        });
+        loadFile(selected);
+      }
+
       document.querySelectorAll('#log-chips .chip').forEach(el => {
-        el.onclick = () => { filterLevel = el.dataset.l; render(); if (selected) loadFile(selected); };
+        el.onclick = () => { 
+          filterLevel = el.dataset.l; 
+          document.querySelectorAll('#log-chips .chip').forEach(c => c.classList.toggle('active', c === el));
+          if (selected) loadFile(selected); 
+        };
       });
+      
       document.querySelectorAll('.list-item[data-kind]').forEach(el => {
         el.onclick = () => {
           document.querySelectorAll('.list-item[data-kind]').forEach(x => x.classList.remove('active'));
@@ -72,8 +89,33 @@ window.Views.logs = (function () {
           loadFile(selected);
         };
       });
+      
       const groupBtn = document.getElementById('log-group');
       if (groupBtn) groupBtn.onclick = analyzeCurrent;
+
+      const liveBtn = document.getElementById('log-live');
+      if (liveBtn) {
+        liveBtn.onclick = async () => {
+          if (isLiveTracking) {
+            await window.API.live.stop();
+            isLiveTracking = false;
+            window.Toast.info('Live-трекер', 'Отслеживание остановлено');
+            render();
+          } else {
+            const logs = state.scan.logs;
+            if (!logs || !logs.length) return window.Toast.error('Нет логов', 'В сборке не найдены файлы логов.');
+            const latestLog = logs.find(l => l.file === 'latest.log') || logs[0];
+            const res = await window.API.live.start(latestLog.path);
+            if (res.ok) {
+              isLiveTracking = true;
+              window.Toast.success('Live-трекер', `Слушаем ${latestLog.file}`);
+              render();
+            } else {
+              window.Toast.error('Ошибка', res.error);
+            }
+          }
+        };
+      }
     }
 
     async function loadFile(sel) {
@@ -82,25 +124,43 @@ window.Views.logs = (function () {
       let res;
       if (sel.path.toLowerCase().endsWith('.gz')) res = await window.API.file.openGzText(sel.path);
       else res = await window.API.file.openText(sel.path);
+      
       if (res.error) {
         panel.innerHTML = '<div class="empty-state">' + t('logs.loadingError', {msg: esc(res.error)}) + '</div>';
         return;
       }
+      
+      const isCrash = sel.kind === 'crash';
       const lines = (res.content || '').split(/\r?\n/);
-      const filtered = lines.map((text, i) => {
-        let level = 'OTHER';
-        if (/\[(FATAL)\]/i.test(text)) level = 'FATAL';
-        else if (/\[(ERROR)\]/i.test(text)) level = 'ERROR';
-        else if (/\[(WARN|WARNING)\]/i.test(text)) level = 'WARN';
-        else if (/\[(INFO)\]/i.test(text)) level = 'INFO';
-        else if (/\[(DEBUG)\]/i.test(text)) level = 'DEBUG';
-        else if (/\[(TRACE)\]/i.test(text)) level = 'TRACE';
-        return { n: i + 1, level, text };
-      }).filter(l => filterLevel === 'ALL' || l.level === filterLevel);
+      const parsedLines = [];
+      let currentLevel = isCrash ? 'FATAL' : 'OTHER';
+      
+      for (let i = 0; i < lines.length; i++) {
+        const text = lines[i];
+        
+        if (isCrash) {
+          // В краш-логах нет тегов, поэтому считаем весь файл FATAL
+          parsedLines.push({ n: i + 1, level: 'FATAL', text });
+        } else {
+          const match = text.match(/\[(?:[^\/]+\/)?(FATAL|ERROR|WARN|WARNING|INFO|DEBUG|TRACE)\]/i);
+          if (match) {
+            currentLevel = match[1].toUpperCase();
+            if (currentLevel === 'WARNING') currentLevel = 'WARN';
+          }
+          parsedLines.push({ n: i + 1, level: currentLevel, text });
+        }
+      }
+      
+      // Логика фильтрации: краш-логи показываются, если выбран ALL, FATAL или ERROR
+      const filtered = parsedLines.filter(l => {
+        if (filterLevel === 'ALL') return true;
+        if (isCrash && (filterLevel === 'FATAL' || filterLevel === 'ERROR')) return true;
+        return l.level === filterLevel;
+      });
 
       panel.innerHTML = `
         <div class="panel-head">
-          <span style="text-transform:none;letter-spacing:0;font-size:11px;font-family:var(--mono);color:var(--text-dim);flex:1">${esc(sel.name)}</span>
+          <span style="text-transform:none;letter-spacing:0;font-size:11px;font-family:var(--font-mono);color:var(--text-dim);flex:1">${esc(sel.name)}</span>
           <span style="text-transform:none;letter-spacing:0;font-size:11px;color:var(--text-dimmer)">${t('logs.lines', {n: filtered.length})}</span>
         </div>
         <div class="code-wrap" style="background:var(--bg-card)">
@@ -111,7 +171,15 @@ window.Views.logs = (function () {
 
     function colorLine(text, level) {
       const s = esc(text);
-      if (level === 'FATAL' || level === 'ERROR') return '<span style="color:#f87171">' + s + '</span>';
+      
+      // Если это строка из стектрейса, делаем её чуть тусклее
+      const isStack = /^\s+at\s+/.test(text) || /^\s*\.\.\.\s+\d+\s+more/.test(text);
+      
+      if (level === 'FATAL' || level === 'ERROR') {
+        if (isStack) return '<span style="color:#b91c1c">' + s + '</span>';
+        if (/Caused by:/.test(text)) return '<span style="color:#ef4444; font-weight:bold;">' + s + '</span>';
+        return '<span style="color:#f87171">' + s + '</span>';
+      }
       if (level === 'WARN') return '<span style="color:#fbbf24">' + s + '</span>';
       if (level === 'INFO') return '<span style="color:#8b94a7">' + s + '</span>';
       if (level === 'DEBUG' || level === 'TRACE') return '<span style="color:#5a6478">' + s + '</span>';
@@ -134,7 +202,8 @@ window.Views.logs = (function () {
     const unsub = window.State.sub(() => {
       if (!container.isConnected) return;
       state = window.State.data;
-      render();
+      if (selected) loadFile(selected);
+      else render();
     });
     const connWatcher = setInterval(() => {
       if (!container.isConnected) { unsub(); clearInterval(connWatcher); }
